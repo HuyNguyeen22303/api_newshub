@@ -1,0 +1,11 @@
+{
+    "watch": [
+        "src",
+        ".env"
+    ],
+    "ext": "ts,json,env",
+    "ignore": [
+        "src/**/*.spec.ts"
+    ],
+    "exec": "npx tsx src/app.ts"
+}

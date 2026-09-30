@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        /* Target & Environment */
+        "target": "ES2024", /* Node 22 fully supports ES2024 features */
+        "lib": [
+            "ES2024"
+        ], /* Browser APIs (like DOM) are excluded for a backend environment */
+        /* Modules */
+        "module": "NodeNext", /* Required for native ES Module support in Node.js */
+        "moduleResolution": "NodeNext", /* Resolves modules using Node's standard ESM rules */
+        /* Emit */
+        "outDir": "./dist", /* Your compiled JavaScript files will go here */
+        "rootDir": "./src", /* Your TypeScript source files live here */
+        "sourceMap": true, /* Enables source maps for debugging production errors back to TS */
+        /* Interop Constraints */
+        "esModuleInterop": true, /* Allows seamless imports from older CommonJS-only Express packages */
+        "forceConsistentCasingInFileNames": true, /* Prevents case-sensitivity issues between OS platforms */
+        /* Type Checking */
+        "strict": true, /* Enables rigorous type checking for safer Express routing */
+        "skipLibCheck": true /* Speeds up builds by ignoring type checks inside node_modules */
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
