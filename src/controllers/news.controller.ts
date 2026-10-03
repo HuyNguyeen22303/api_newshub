@@ -132,7 +132,7 @@ export const deleteNews = async (req: Request, res: Response, next: NextFunction
 export const approveNews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
-        const news = await approveNewsService(id);
+        const news = await approveNewsService(id as string);
 
         res.status(200).json({
             success: true,
@@ -151,7 +151,7 @@ export const rejectNews = async (req: Request, res: Response, next: NextFunction
     try {
         const { id } = req.params;
         const { reason } = req.body;
-        const result = await rejectNewsService(id, reason);
+        const result = await rejectNewsService(id as string, reason);
 
         res.status(200).json({
             success: true,
