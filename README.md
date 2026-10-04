@@ -33,10 +33,10 @@ npm run seed
 ### Biến môi trường (`.env`)
 
 ```env
-PORT=2727
-MONGODB_URI=mongodb://localhost:27017/newshub
-JWT_SECRET=your_jwt_secret_key
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+PORT=
+MONGODB_URI=
+JWT_SECRET=
+JWT_REFRESH_SECRET=
 ```
 
 ---
