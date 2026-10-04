@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import ApiError from '../utils/ApiError.js';
 
+import { UserRole } from '../constants/index.js';
+
 // Mở rộng Request để thêm trường user
 declare global {
     namespace Express {
@@ -53,7 +55,7 @@ export const authMiddleware = async (
 
         // Gắn user info vào request để controller dùng
         req.user = {
-            _id: (user._id as string).toString(),
+            _id: String(user._id),
             name: user.name,
             email: user.email,
             role: user.role,
@@ -67,6 +69,20 @@ export const authMiddleware = async (
             next(new ApiError(401, 'Token không hợp lệ hoặc đã hết hạn'));
         }
     }
+};
+
+// ==============================
+// Authorize Middleware — Phân quyền theo roles
+// Phải dùng SAU authMiddleware
+// ==============================
+export const authorizeRoles = (...allowedRoles: (UserRole | string)[]) => {
+    return (req: Request, _res: Response, next: NextFunction): void => {
+        if (!req.user || !allowedRoles.includes(req.user.role)) {
+            next(new ApiError(403, 'Bạn không có quyền thực hiện thao tác này'));
+            return;
+        }
+        next();
+    };
 };
 
 // ==============================

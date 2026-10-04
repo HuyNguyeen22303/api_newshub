@@ -296,9 +296,9 @@ const seedDB = async () => {
 
         // Tạo Users
         console.log('\n👤 Đang tạo Users...');
-        const createdUsers = [];
+        const createdUsers: any[] = [];
         for (const userData of usersData) {
-            const user = await User.create(userData);
+            const user = await User.create(userData as any);
             createdUsers.push(user);
             console.log(`   ✅ ${user.role.padEnd(6)} | ${user.email}`);
         }
@@ -309,7 +309,7 @@ const seedDB = async () => {
 
         console.log('\n📰 Đang tạo News...');
         for (const article of newsData) {
-            const news = await News.create(article);
+            const news = await News.create(article as any);
             const statusIcon = news.status === 'published' ? '🟢' : news.status === 'draft' ? '🟡' : '⚪';
             console.log(`   ${statusIcon} [${news.category.padEnd(13)}] ${news.title.substring(0, 50)}...`);
         }
