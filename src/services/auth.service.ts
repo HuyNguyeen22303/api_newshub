@@ -47,8 +47,8 @@ export const registerService = async (data: {
     const user = await User.create({ name, email, password });
 
     // Tạo tokens
-    const accessToken = generateAccessToken(user._id as string);
-    const refreshToken = generateRefreshToken(user._id as string);
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
 
     // Lưu refresh token vào DB
     user.refreshToken = refreshToken;
@@ -94,8 +94,8 @@ export const loginService = async (data: {
     }
 
     // Tạo tokens
-    const accessToken = generateAccessToken(user._id as string);
-    const refreshToken = generateRefreshToken(user._id as string);
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
 
     // Lưu refresh token vào DB
     user.refreshToken = refreshToken;
@@ -133,7 +133,7 @@ export const refreshTokenService = async (token: string) => {
     }
 
     // Cấp access token mới
-    const accessToken = generateAccessToken(user._id as string);
+    const accessToken = generateAccessToken(String(user._id));
 
     return { accessToken };
 };

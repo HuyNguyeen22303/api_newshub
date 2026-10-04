@@ -1,6 +1,6 @@
 # 📰 NewsHub API
 
-RESTful API cho hệ thống quản lý tin tức, xây dựng với **Node.js**, **Express**, **TypeScript** và **MongoDB**.
+RESTful API cho hệ thống quản lý tin tức, xây dựng với **Node.js**, **Express**, **TypeScript**, **MongoDB** và tích hợp **Telegram Bot Storage** để lưu trữ hình ảnh.
 
 ## 🛠️ Tech Stack
 
@@ -10,6 +10,7 @@ RESTful API cho hệ thống quản lý tin tức, xây dựng với **Node.js**
 - **Database**: MongoDB (Mongoose ODM)
 - **Auth**: JWT (Access Token + Refresh Token)
 - **Password**: bcryptjs
+- **File Upload**: Multer (Memory Storage) + Telegram Bot API (Storage Proxy)
 
 ## 🚀 Cài đặt & Chạy
 
@@ -33,34 +34,38 @@ npm run seed
 ### Biến môi trường (`.env`)
 
 ```env
-PORT=
-MONGODB_URI=
-JWT_SECRET=
-JWT_REFRESH_SECRET=
+PORT=2727
+MONGODB_URI=mongodb://localhost:27017/newshub
+JWT_SECRET=your_jwt_secret_key
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
 ```
 
 ---
 
 ## 👤 Tài khoản mẫu (sau khi seed)
 
-| Role | Email | Password |
-|------|-------|----------|
-| 🔴 Admin | `admin@newshub.com` | `admin123` |
-| 🟡 Editor | `editor@newshub.com` | `editor123` |
-| 🟢 User | `user@newshub.com` | `user123` |
+| Role | Email | Password | Ghi chú |
+|------|-------|----------|---------|
+| 🔴 Admin | `admin@newshub.com` | `admin123` | Quyền cao nhất hệ thống |
+| 🟡 Editor | `editor@newshub.com` | `editor123` | Quản lý & chỉnh sửa tất cả bài viết |
+| 🔵 Reporter | `reporter@newshub.com` | `phongvien123` | Tạo bài viết (chờ duyệt/nháp), sửa/xóa bài của mình |
+| 🟢 User | `user@newshub.com` | `user123` | Người dùng thông thường (chỉ đọc) |
+| 🟢 User | `hoang@newshub.com` | `hoang123` | Người dùng thông thường (chỉ đọc) |
 
 ### Phân quyền
 
-| Quyền | User | Editor | Admin |
-|-------|:----:|:------:|:-----:|
-| Đọc tin tức | ✅ | ✅ | ✅ |
-| Tạo tin tức | ✅ (chờ duyệt) | ✅ | ✅ |
-| Sửa tin tức (của mình) | ✅ | ✅ | ✅ |
-| Sửa tin tức (của người khác) | ❌ | ❌ | ✅ |
-| Xóa tin tức (của mình) | ✅ | ✅ | ✅ |
-| Xóa tin tức (của người khác) | ❌ | ❌ | ✅ |
-| Duyệt / Từ chối bài | ❌ | ❌ | ✅ |
-| Xem bài chờ duyệt | ❌ | ❌ | ✅ |
+| Quyền | User | Reporter | Editor | Admin |
+|-------|:----:|:--------:|:------:|:-----:|
+| Đọc tin tức | ✅ | ✅ | ✅ | ✅ |
+| Tạo tin tức | ❌ | ✅ (chờ duyệt/nháp) | ✅ | ✅ |
+| Sửa tin tức (của mình) | ❌ | ✅ | ✅ | ✅ |
+| Sửa tin tức (của người khác) | ❌ | ❌ | ✅ | ✅ |
+| Xóa tin tức (của mình) | ❌ | ✅ | ✅ | ✅ |
+| Xóa tin tức (của người khác) | ❌ | ❌ | ✅ | ✅ |
+| Duyệt / Từ chối bài | ❌ | ❌ | ❌ | ✅ |
+| Xem bài chờ duyệt | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
@@ -214,28 +219,26 @@ GET /api/news?category=technology&page=1&limit=5&sortBy=viewCount&order=desc
 ```json
 {
   "message": "Lấy danh sách tin tức thành công",
-  "data": {
-    "news": [
-      {
-        "_id": "...",
-        "title": "AI đang thay đổi ngành lập trình",
-        "slug": "ai-dang-thay-doi-nganh-lap-trinh-1727901234567",
-        "summary": "...",
-        "category": "technology",
-        "tags": ["ai", "lập trình"],
-        "author": { "_id": "...", "name": "Admin NewsHub", "avatar": "..." },
-        "status": "published",
-        "viewCount": 1520,
-        "thumbnail": "...",
-        "createdAt": "2026-10-02T..."
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 5,
-      "total": 12,
-      "totalPages": 3
+  "data": [
+    {
+      "_id": "...",
+      "title": "AI đang thay đổi ngành lập trình",
+      "slug": "ai-dang-thay-doi-nganh-lap-trinh-1727901234567",
+      "summary": "...",
+      "category": "technology",
+      "tags": ["ai", "lập trình"],
+      "author": { "_id": "...", "name": "Admin NewsHub", "avatar": "..." },
+      "status": "published",
+      "viewCount": 1520,
+      "thumbnail": "/api/upload/image/...",
+      "createdAt": "2026-10-02T..."
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 5,
+    "total": 12,
+    "totalPages": 3
   }
 }
 ```
@@ -253,7 +256,7 @@ GET /api/news/:id
 **Response (200):**
 ```json
 {
-  "message": "Lấy tin tức thành công",
+  "message": "Lấy chi tiết tin tức thành công",
   "data": {
     "_id": "...",
     "title": "...",
@@ -273,7 +276,7 @@ GET /api/news/:id
 
 ---
 
-#### Tạo tin tức mới 🔒
+#### Tạo tin tức mới 🔒 (Reporter, Editor, Admin)
 
 ```
 POST /api/news
@@ -282,34 +285,50 @@ POST /api/news
 **Headers:**
 ```
 Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data (nếu kèm ảnh) hoặc application/json
 ```
 
-**Body:**
-```json
-{
-  "title": "Tiêu đề bài viết",
-  "content": "<p>Nội dung bài viết</p>",
-  "summary": "Tóm tắt ngắn",
-  "category": "technology",
-  "tags": ["tag1", "tag2"],
-  "thumbnail": "https://example.com/image.jpg"
-}
-```
+**Body (multipart/form-data hoặc JSON):**
 
-> ⚠️ User thường tạo bài → status tự động = `pending` (chờ admin duyệt).
-> Admin/Editor tạo bài → có thể chọn status.
+| Field | Type | Required | Mô tả |
+|-------|------|:--------:|-------|
+| `title` | string | ✅ | Tiêu đề bài viết |
+| `content` | string | ✅ | Nội dung bài viết (HTML/Text) |
+| `category` | string | ✅ | Danh mục thuộc `NEWS_CATEGORIES` |
+| `summary` | string | ❌ | Tóm tắt ngắn bài viết |
+| `tags` | string[] / string | ❌ | Thẻ tag gắn cho bài viết |
+| `thumbnail` | File / string | ❌ | File ảnh thumbnail (form-data field `thumbnail`) hoặc URL ảnh |
+| `status` | string | ❌ | `draft` hoặc `pending` (Reporter); `published`, `draft`, `pending` (Admin/Editor) |
+
+> ⚠️ **Quy tắc phân quyền tạo bài:**
+> - **Reporter**: Tự động chuyển status = `pending` (chờ duyệt) hoặc `draft` (bản nháp).
+> - **Editor / Admin**: Mặc định status = `published` (hoặc có thể tùy chọn `draft`, `pending`).
 
 **Response (201):**
 ```json
 {
-  "message": "Tạo tin tức thành công",
-  "data": { ... }
+  "success": true,
+  "message": "Tạo tin tức thành công, đang chờ biên tập viên/admin duyệt",
+  "data": {
+    "_id": "...",
+    "title": "Tiêu đề bài viết",
+    "slug": "tieu-de-bai-viet-1728045600000",
+    "content": "<p>Nội dung...</p>",
+    "summary": "Tóm tắt ngắn",
+    "category": "technology",
+    "tags": ["tech", "ai"],
+    "thumbnail": "/api/upload/image/AgACAgIAAxkBAA...",
+    "author": "...",
+    "status": "pending",
+    "viewCount": 0,
+    "createdAt": "2026-10-04T..."
+  }
 }
 ```
 
 ---
 
-#### Cập nhật tin tức 🔒
+#### Cập nhật tin tức 🔒 (Reporter - bài của mình, Editor/Admin - tất cả)
 
 ```
 PUT /api/news/:id
@@ -318,9 +337,10 @@ PUT /api/news/:id
 **Headers:**
 ```
 Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data (nếu đính kèm file thumbnail mới) hoặc application/json
 ```
 
-**Body** (chỉ gửi field cần sửa):
+**Body** (chỉ gửi field cần sửa, có thể đính kèm file `thumbnail`):
 ```json
 {
   "title": "Tiêu đề đã sửa",
@@ -328,11 +348,12 @@ Authorization: Bearer <accessToken>
 }
 ```
 
-> ⚠️ User/Editor chỉ sửa được bài **của mình**. Admin sửa được tất cả.
+> ⚠️ Reporter chỉ sửa được bài **của mình**. Admin và Editor có quyền sửa tất cả các bài.
 
 **Response (200):**
 ```json
 {
+  "success": true,
   "message": "Cập nhật tin tức thành công",
   "data": { ... }
 }
@@ -340,7 +361,7 @@ Authorization: Bearer <accessToken>
 
 ---
 
-#### Xóa tin tức 🔒
+#### Xóa tin tức 🔒 (Reporter - bài của mình, Editor/Admin - tất cả)
 
 ```
 DELETE /api/news/:id
@@ -351,15 +372,15 @@ DELETE /api/news/:id
 Authorization: Bearer <accessToken>
 ```
 
-> Sử dụng **soft delete** — bài viết không bị xóa thật, chỉ đánh dấu `isDeleted: true`.
-
-> ⚠️ User/Editor chỉ xóa được bài **của mình**. Admin xóa được tất cả.
+> Sử dụng **soft delete** — bài viết không bị xóa khỏi DB, chỉ đánh dấu `isDeleted: true`.
+> ⚠️ Reporter chỉ xóa được bài **của mình**. Admin và Editor có quyền xóa tất cả các bài.
 
 **Response (200):**
 ```json
 {
+  "success": true,
   "message": "Xóa tin tức thành công",
-  "data": { ... }
+  "data": { "id": "..." }
 }
 ```
 
@@ -376,11 +397,12 @@ PATCH /api/news/:id/approve
 Authorization: Bearer <accessToken>
 ```
 
-> Chỉ duyệt được bài đang ở trạng thái `pending`.
+> Chỉ duyệt được bài đang ở trạng thái `pending`. Bài viết sau khi duyệt sẽ chuyển sang trạng thái `published` và cập nhật `publishedAt`.
 
 **Response (200):**
 ```json
 {
+  "success": true,
   "message": "Duyệt bài viết thành công",
   "data": { ... }
 }
@@ -402,15 +424,19 @@ Authorization: Bearer <accessToken>
 **Body (optional):**
 ```json
 {
-  "reason": "Nội dung chưa phù hợp"
+  "reason": "Nội dung chưa đạt yêu cầu kiểm duyệt"
 }
 ```
 
 **Response (200):**
 ```json
 {
-  "message": "Từ chối bài viết thành công",
-  "data": { ... }
+  "success": true,
+  "message": "Từ chối bài viết",
+  "data": {
+    "news": { ... },
+    "reason": "Nội dung chưa đạt yêu cầu kiểm duyệt"
+  }
 }
 ```
 
@@ -427,18 +453,107 @@ GET /api/news/pending
 Authorization: Bearer <accessToken>
 ```
 
-**Query Params:** `page`, `limit` (giống GET /api/news)
+**Query Params:** `page`, `limit` (tương tự GET /api/news)
 
 **Response (200):**
 ```json
 {
-  "message": "Lấy danh sách bài chờ duyệt thành công",
+  "success": true,
+  "message": "Danh sách bài chờ duyệt",
+  "data": [ ... ],
+  "pagination": { ... }
+}
+```
+
+---
+
+### 📸 Upload (Lưu trữ ảnh qua Telegram Bot API)
+
+Hệ thống sử dụng **Multer (Memory Storage)** để nhận file và gửi trực tiếp dữ liệu Buffer lên **Telegram Bot API** để lưu trữ mà không tốn dung lượng ổ cứng server. Khi cần hiển thị ảnh, server sẽ làm **proxy** để tải và trả lại dữ liệu ảnh cho client.
+
+#### Upload 1 ảnh 🔒
+
+```
+POST /api/upload/image
+```
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+```
+
+**Form-Data:**
+- `image`: File ảnh (định dạng `jpeg`, `png`, `gif`, `webp`; dung lượng tối đa 10MB)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Upload ảnh thành công",
   "data": {
-    "news": [ ... ],
-    "pagination": { ... }
+    "url": "/api/upload/image/AgACAgIAAxkBAA...",
+    "file_id": "AgACAgIAAxkBAA...",
+    "file_unique_id": "AQAD...",
+    "originalName": "photo.jpg",
+    "size": 245120,
+    "mimetype": "image/jpeg"
   }
 }
 ```
+
+---
+
+#### Upload nhiều ảnh (Tối đa 10 ảnh) 🔒
+
+```
+POST /api/upload/images
+```
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+```
+
+**Form-Data:**
+- `images`: Danh sách nhiều file ảnh (tối đa 10 file, field name `images`)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Upload 2 ảnh thành công",
+  "data": [
+    {
+      "url": "/api/upload/image/AgACAgIAAxkBAA1...",
+      "file_id": "AgACAgIAAxkBAA1...",
+      "file_unique_id": "AQAD...",
+      "originalName": "image1.jpg",
+      "size": 182300,
+      "mimetype": "image/jpeg"
+    },
+    {
+      "url": "/api/upload/image/AgACAgIAAxkBAA2...",
+      "file_id": "AgACAgIAAxkBAA2...",
+      "file_unique_id": "AQAD...",
+      "originalName": "image2.png",
+      "size": 310500,
+      "mimetype": "image/png"
+    }
+  ]
+}
+```
+
+---
+
+#### Serve/Hiển thị ảnh (Public Proxy)
+
+```
+GET /api/upload/image/:fileId
+```
+
+> API này là public, client (như thẻ `<img>` trong HTML/React) gọi URL `/api/upload/image/:fileId` để tải ảnh. Backend tự động tải stream dữ liệu từ Telegram và trả về cùng header cache 24h (`Cache-Control: public, max-age=86400`).
 
 ---
 
@@ -446,22 +561,25 @@ Authorization: Bearer <accessToken>
 
 | Method | Endpoint | Auth | Quyền | Mô tả |
 |--------|----------|:----:|:-----:|-------|
-| POST | `/api/auth/register` | ❌ | All | Đăng ký |
+| POST | `/api/auth/register` | ❌ | All | Đăng ký tài khoản |
 | POST | `/api/auth/login` | ❌ | All | Đăng nhập |
-| POST | `/api/auth/refresh-token` | ❌ | All | Refresh token |
+| POST | `/api/auth/refresh-token` | ❌ | All | Refresh access token |
 | POST | `/api/auth/logout` | 🔒 | All | Đăng xuất |
-| GET | `/api/news` | ❌ | All | Danh sách tin tức |
-| GET | `/api/news/:id` | ❌ | All | Chi tiết tin tức |
-| POST | `/api/news` | 🔒 | All | Tạo tin tức |
-| PUT | `/api/news/:id` | 🔒 | All | Cập nhật tin tức |
-| DELETE | `/api/news/:id` | 🔒 | All | Xóa tin tức (soft) |
-| GET | `/api/news/pending` | 🔒 | 👑 Admin | Bài chờ duyệt |
-| PATCH | `/api/news/:id/approve` | 🔒 | 👑 Admin | Duyệt bài |
-| PATCH | `/api/news/:id/reject` | 🔒 | 👑 Admin | Từ chối bài |
+| GET | `/api/news` | ❌ | All | Lấy danh sách tin tức (published) |
+| GET | `/api/news/:id` | ❌ | All | Xem chi tiết tin tức (tăng viewCount) |
+| POST | `/api/news` | 🔒 | Reporter, Editor, Admin | Tạo tin tức mới (có upload thumbnail) |
+| PUT | `/api/news/:id` | 🔒 | Reporter (của mình), Editor, Admin | Cập nhật tin tức (có upload thumbnail) |
+| DELETE | `/api/news/:id` | 🔒 | Reporter (của mình), Editor, Admin | Xóa mềm tin tức |
+| GET | `/api/news/pending` | 🔒 | 👑 Admin | Danh sách bài chờ duyệt |
+| PATCH | `/api/news/:id/approve` | 🔒 | 👑 Admin | Duyệt bài xuất bản |
+| PATCH | `/api/news/:id/reject` | 🔒 | 👑 Admin | Từ chối bài viết |
+| POST | `/api/upload/image` | 🔒 | All | Upload 1 file ảnh lên Telegram Storage |
+| POST | `/api/upload/images` | 🔒 | All | Upload nhiều file ảnh (tối đa 10) |
+| GET | `/api/upload/image/:fileId` | ❌ | All | Public Proxy serve ảnh từ Telegram |
 
-> 🔒 = Cần gửi `Authorization: Bearer <token>` trong headers
+> 🔒 = Cần gửi header `Authorization: Bearer <accessToken>`
 >
-> 👑 = Chỉ Admin mới được phép
+> 👑 = Chỉ Admin mới có quyền thực hiện
 
 ---
 
@@ -469,31 +587,36 @@ Authorization: Bearer <accessToken>
 
 ```
 src/
-├── app.ts                  # Entry point
+├── app.ts                  # Entry point Express app & mount router
 ├── config/
-│   └── database.ts         # Kết nối MongoDB
+│   └── database.ts         # Kết nối MongoDB (Mongoose)
 ├── constants/
-│   └── index.ts            # Hằng số (roles, categories, status)
+│   └── index.ts            # Hằng số & Enums (USER_ROLES, NEWS_CATEGORIES, NEWS_STATUS)
 ├── controllers/
-│   ├── auth.controller.ts  # Xử lý request auth
-│   └── news.controller.ts  # Xử lý request news
+│   ├── auth.controller.ts  # Controller xử lý auth (login, register, logout, refresh)
+│   ├── news.controller.ts  # Controller xử lý tin tức & upload thumbnail bài viết
+│   └── upload.controller.ts# Controller xử lý upload ảnh đơn/nhiều & serve image proxy
 ├── middlewares/
-│   ├── auth.middleware.ts   # Xác thực JWT & phân quyền
-│   └── error.middleware.ts  # Xử lý lỗi tập trung
+│   ├── auth.middleware.ts   # Middleware xác thực JWT & authorize roles
+│   ├── error.middleware.ts  # Middleware xử lý lỗi tập trung (ApiError)
+│   └── upload.middleware.ts # Middleware cấu hình Multer parse multipart/form-data
 ├── models/
-│   ├── user.model.ts       # Schema User
-│   └── news.model.ts       # Schema News
+│   ├── user.model.ts       # Schema User & mã hóa bcrypt password
+│   └── news.model.ts       # Schema News, text index & auto-slug generator
 ├── routes/
-│   ├── index.ts            # Router chính
-│   ├── auth.route.ts       # Routes auth
-│   └── news.route.ts       # Routes news
+│   ├── index.ts            # Router chính gom các sub-router
+│   ├── auth.route.ts       # Sub-router Auth
+│   ├── news.route.ts       # Sub-router News
+│   └── upload.route.ts     # Sub-router Upload
 ├── seeds/
-│   └── seed.ts             # Dữ liệu mẫu
+│   ├── check.ts            # Script kiểm tra DB
+│   └── seed.ts             # Script kho dữ liệu mẫu đầy đủ roles & bài viết
 ├── services/
-│   ├── auth.service.ts     # Business logic auth
-│   └── news.service.ts     # Business logic news
+│   ├── auth.service.ts     # Logic nghiệp vụ xác thực & JWT token
+│   ├── news.service.ts     # Logic nghiệp vụ CRUD, phân trang & duyệt bài
+│   └── telegram.service.ts # Logic gửi & tải file qua Telegram Bot API
 └── utils/
-    └── ApiError.ts         # Custom error class
+    └── ApiError.ts         # Custom Error Class kế thừa Error
 ```
 
 ---
@@ -508,8 +631,8 @@ published → archived
 
 | Status | Mô tả |
 |--------|-------|
-| `draft` | Bản nháp, chưa gửi duyệt |
+| `draft` | Bản nháp, phóng viên chưa gửi duyệt |
 | `pending` | Đang chờ admin duyệt |
 | `published` | Đã xuất bản, hiển thị công khai |
-| `rejected` | Bị từ chối |
+| `rejected` | Bị từ chối (kèm lý do từ chối) |
 | `archived` | Đã lưu trữ |

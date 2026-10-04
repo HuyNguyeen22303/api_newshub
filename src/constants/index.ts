@@ -28,5 +28,5 @@ export type NewsStatus = (typeof NEWS_STATUS)[number];
 // ==============================
 // User Roles
 // ==============================
-export const USER_ROLES = ['user', 'admin', 'editor'] as const;
+export const USER_ROLES = ['user', 'admin', 'editor', 'reporter'] as const;
 export type UserRole = (typeof USER_ROLES)[number];

@@ -3,6 +3,7 @@
 
 import News, { INews } from '../models/news.model.js';
 import ApiError from '../utils/ApiError.js';
+import { NewsStatus, NewsCategory } from '../constants/index.js';
 
 // ==============================
 // Interface cho query params
@@ -110,16 +111,19 @@ export const createNewsService = async (
     authorId: string,
     userRole: string
 ) => {
-    // User thường → bắt buộc status = 'pending' (chờ admin duyệt)
-    // Admin/Editor → được chọn status tùy ý
-    let status = data.status || 'draft';
-    if (userRole === 'user') {
-        status = 'pending';
+    // Phóng viên (reporter) → mặc định bài viết là 'pending' (chờ duyệt), có thể lưu 'draft'
+    // Admin / Editor → mặc định 'published' hoặc theo status lựa chọn
+    let status = data.status;
+    if (userRole === 'reporter') {
+        status = data.status === 'draft' ? 'draft' : 'pending';
+    } else if (!status) {
+        status = 'published';
     }
 
     const news = await News.create({
         ...data,
-        status,
+        category: data.category as NewsCategory,
+        status: status as NewsStatus,
         author: authorId,
     });
 
@@ -142,8 +146,8 @@ export const updateNewsService = async (
         throw new ApiError(404, 'Không tìm thấy tin tức');
     }
 
-    // Kiểm tra quyền: admin sửa được tất cả, user/editor chỉ sửa bài của mình
-    if (userRole !== 'admin' && news.author.toString() !== userId) {
+    // Kiểm tra quyền: admin & editor sửa được tất cả, reporter chỉ sửa bài của chính mình
+    if (userRole !== 'admin' && userRole !== 'editor' && news.author.toString() !== userId) {
         throw new ApiError(403, 'Bạn không có quyền sửa bài viết này');
     }
 
@@ -164,8 +168,8 @@ export const deleteNewsService = async (id: string, userId: string, userRole: st
         throw new ApiError(404, 'Không tìm thấy tin tức');
     }
 
-    // Kiểm tra quyền: admin xóa được tất cả, user/editor chỉ xóa bài của mình
-    if (userRole !== 'admin' && news.author.toString() !== userId) {
+    // Kiểm tra quyền: admin & editor xóa được tất cả, reporter chỉ xóa bài của chính mình
+    if (userRole !== 'admin' && userRole !== 'editor' && news.author.toString() !== userId) {
         throw new ApiError(403, 'Bạn không có quyền xóa bài viết này');
     }
 
@@ -224,7 +228,7 @@ export const getPendingNewsService = async (query: { page?: number; limit?: numb
     const { page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
 
-    const filter = { status: 'pending', isDeleted: false };
+    const filter: Record<string, any> = { status: 'pending', isDeleted: false };
 
     const [news, total] = await Promise.all([
         News.find(filter)
