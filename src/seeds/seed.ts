@@ -35,9 +35,9 @@ const usersData = [
     },
     {
         name: 'Lê Minh Phóng Viên',
-        email: 'phongvien@newshub.com',
+        email: 'reporter@newshub.com',
         password: 'phongvien123',
-        role: 'editor',
+        role: 'reporter',
         avatar: 'https://i.pravatar.cc/150?img=4',
     },
     {
