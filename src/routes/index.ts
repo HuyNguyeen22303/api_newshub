@@ -9,11 +9,13 @@
 import { Router } from 'express';
 import authRouter from './auth.route.js';
 import newsRouter from './news.route.js';
+import uploadRouter from './upload.route.js';
 
 const router = Router();
 
 // Gắn prefix cho từng nhóm route
-router.use('/auth', authRouter);   // /api/auth/register, /api/auth/login
-router.use('/news', newsRouter);   // /api/news, /api/news/:id
+router.use('/auth', authRouter);     // /api/auth/register, /api/auth/login
+router.use('/news', newsRouter);     // /api/news, /api/news/:id
+router.use('/upload', uploadRouter); // /api/upload/image, /api/upload/images
 
 export default router;

@@ -12,7 +12,8 @@ import {
     rejectNews,
     getPendingNews,
 } from '../controllers/news.controller.js';
-import { authMiddleware, adminMiddleware } from '../middlewares/auth.middleware.js';
+import { authMiddleware, adminMiddleware, authorizeRoles } from '../middlewares/auth.middleware.js';
+import { uploadSingle } from '../middlewares/upload.middleware.js';
 
 const newsRouter = Router();
 
@@ -24,11 +25,13 @@ newsRouter.get('/pending', authMiddleware, adminMiddleware, getPendingNews);  //
 newsRouter.get('/:id', getNewsById);      // GET /api/news/:id     — Chi tiết 1 tin
 
 // ==================
-// 🔒 PRIVATE ROUTES (cần đăng nhập)
+// 🔒 AUTHORIZED ROUTES (chỉ phóng viên, biên tập viên, admin)
 // ==================
-newsRouter.post('/', authMiddleware, createNews);         // POST   /api/news      — Tạo tin mới
-newsRouter.put('/:id', authMiddleware, updateNews);       // PUT    /api/news/:id  — Cập nhật tin
-newsRouter.delete('/:id', authMiddleware, deleteNews);    // DELETE /api/news/:id  — Xóa tin
+const newsCreators = authorizeRoles('admin', 'editor', 'reporter');
+
+newsRouter.post('/', authMiddleware, newsCreators, uploadSingle('thumbnail'), createNews);         // POST   /api/news      — Tạo tin mới
+newsRouter.put('/:id', authMiddleware, newsCreators, uploadSingle('thumbnail'), updateNews);       // PUT    /api/news/:id  — Cập nhật tin
+newsRouter.delete('/:id', authMiddleware, newsCreators, deleteNews);    // DELETE /api/news/:id  — Xóa tin
 
 // ==================
 // 👑 ADMIN ROUTES (chỉ admin)
