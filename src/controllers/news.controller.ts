@@ -12,6 +12,7 @@ import {
     rejectNewsService,
     getPendingNewsService,
 } from '../services/news.service.js';
+import { uploadToTelegram } from '../services/telegram.service.js';
 import ApiError from '../utils/ApiError.js';
 
 // =============================================
@@ -64,10 +65,21 @@ export const getNewsById = async (req: Request, res: Response, next: NextFunctio
 // =============================================
 export const createNews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const { title, content, summary, category, tags, thumbnail, status } = req.body;
+        const { title, content, summary, category, tags, status } = req.body;
 
         if (!title || !content || !category) {
             throw new ApiError(400, 'Vui lòng nhập đầy đủ title, content, category');
+        }
+
+        // Nếu có file ảnh thumbnail → upload lên Telegram
+        let thumbnail: string | undefined;
+        if (req.file) {
+            const { file_id } = await uploadToTelegram(
+                req.file.buffer,
+                req.file.originalname,
+                req.file.mimetype
+            );
+            thumbnail = `/api/upload/image/${file_id}`;
         }
 
         const news = await createNewsService(
@@ -76,8 +88,8 @@ export const createNews = async (req: Request, res: Response, next: NextFunction
             req.user!.role
         );
 
-        const message = req.user!.role === 'user'
-            ? 'Tạo tin tức thành công, đang chờ admin duyệt'
+        const message = req.user!.role === 'reporter'
+            ? 'Tạo tin tức thành công, đang chờ biên tập viên/admin duyệt'
             : 'Tạo tin tức thành công';
 
         res.status(201).json({
@@ -96,6 +108,17 @@ export const createNews = async (req: Request, res: Response, next: NextFunction
 export const updateNews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { id } = req.params;
+
+        // Nếu có file ảnh thumbnail mới → upload lên Telegram
+        if (req.file) {
+            const { file_id } = await uploadToTelegram(
+                req.file.buffer,
+                req.file.originalname,
+                req.file.mimetype
+            );
+            req.body.thumbnail = `/api/upload/image/${file_id}`;
+        }
+
         const news = await updateNewsService(id as string, req.body, req.user!._id, req.user!.role);
 
         res.status(200).json({
