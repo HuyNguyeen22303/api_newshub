@@ -35,9 +35,9 @@ npm run seed
 
 ```env
 PORT=2727
-MONGODB_URI=mongodb://localhost:27017/newshub
-JWT_SECRET=your_jwt_secret_key
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+MONGODB_URI=
+JWT_SECRET=
+JWT_REFRESH_SECRET=
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
 ```
@@ -52,7 +52,7 @@ TELEGRAM_CHAT_ID=your_telegram_chat_id
 | 🟡 Editor | `editor@newshub.com` | `editor123` | Quản lý & chỉnh sửa tất cả bài viết |
 | 🔵 Reporter | `reporter@newshub.com` | `phongvien123` | Tạo bài viết (chờ duyệt/nháp), sửa/xóa bài của mình |
 | 🟢 User | `user@newshub.com` | `user123` | Người dùng thông thường (chỉ đọc) |
-| 🟢 User | `hoang@newshub.com` | `hoang123` | Người dùng thông thường (chỉ đọc) |
+
 
 ### Phân quyền
 
