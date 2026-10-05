@@ -63,7 +63,32 @@ const newsSchema = new Schema<INews>(
         tags: {
             type: [String],
             default: [],
-            set: (tags: string[]) => tags.map((tag) => tag.toLowerCase().trim()),
+            set: (tags: unknown): string[] => {
+                if (!tags) return [];
+                let tagList: string[] = [];
+                if (Array.isArray(tags)) {
+                    tagList = tags.map((t) => String(t));
+                } else if (typeof tags === 'string') {
+                    const trimmed = tags.trim();
+                    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            if (Array.isArray(parsed)) {
+                                tagList = parsed.map((t) => String(t));
+                            } else {
+                                tagList = [trimmed];
+                            }
+                        } catch {
+                            tagList = trimmed.split(',').map((t) => t.trim()).filter(Boolean);
+                        }
+                    } else if (trimmed.includes(',')) {
+                        tagList = trimmed.split(',').map((t) => t.trim()).filter(Boolean);
+                    } else if (trimmed.length > 0) {
+                        tagList = [trimmed];
+                    }
+                }
+                return tagList.map((tag) => tag.toLowerCase().trim()).filter(Boolean);
+            },
         },
         author: {
             type: Schema.Types.ObjectId,
