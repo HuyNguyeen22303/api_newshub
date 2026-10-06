@@ -151,6 +151,15 @@ export const updateNewsService = async (
         throw new ApiError(403, 'Bạn không có quyền sửa bài viết này');
     }
 
+    // Reporter không được phép thay đổi status sang published/rejected
+    // Chỉ admin/editor mới có quyền duyệt bài (qua endpoint approve/reject)
+    if (userRole === 'reporter' && updateData.status) {
+        const allowedStatuses = ['draft', 'pending'];
+        if (!allowedStatuses.includes(updateData.status)) {
+            throw new ApiError(403, 'Reporter không có quyền chuyển trạng thái bài viết sang ' + updateData.status + '. Chỉ admin/editor mới được duyệt bài.');
+        }
+    }
+
     // Cập nhật
     Object.assign(news, updateData);
     await news.save(); // Trigger pre-save hook (update slug nếu title đổi)
